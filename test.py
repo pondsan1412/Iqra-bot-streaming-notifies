@@ -1,34 +1,32 @@
-import socket
-import requests
-import time
+from src.api.twitch_api import TwitchAPI
 
-def check_ping(url):
+CLIENT_ID = ""
+CLIENT_SECRET = ""
+
+USERNAME = ""
+
+def main():
+    twitch = TwitchAPI(CLIENT_ID, CLIENT_SECRET)
     try:
-        # Extract domain from URL
-        domain = url.replace("http://", "").replace("https://", "").split('/')[0]
-        ip_address = socket.gethostbyname(domain)
-        
-        # Measure latency
-        start_time = time.time()
-        response = requests.get(url)
-        latency = round((time.time() - start_time) * 1000, 2)  # Convert to milliseconds
-        
-        # Get status
-        status = response.status_code
-        
-        # Create result dictionary
-        result = {
-            "latency": f"{latency} ms",
-            "status": status,
-            "ip": ip_address,
-            "domain": domain,
-            "url": url,
-        }
-        return result
-    except Exception as e:
-        return {"error": str(e)}
+        user_data = twitch.get_user(USERNAME)
+        if not user_data:
+            print(f"User '{USERNAME}' not found.")
+            return
+        user_id = user_data[0]["id"]
+        print(f"User ID: {user_id}")
+        print(f"Display Name: {user_data[0]['display_name']}")
 
-# Example usage
-url = "https://discord.com/"
-result = check_ping(url)
-print(result)
+        live_data = twitch.check_live_status(user_id)
+        if live_data:
+            print(f"{USERNAME} is currently live!")
+            print(f"Title: {live_data[0]['title']}")
+            print(f"Game: {live_data[0]['game_name']}")
+            print(f"Viewers: {live_data[0]['viewer_count']}")
+        else:
+            print(f"{USERNAME} is not live.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+if __name__ == "__main__":
+    main()
