@@ -6,7 +6,7 @@ load_dotenv()
 
 async def report_to_admin(ctx: discord.Client, cmd_used:str, author: str, content:str):
     """report to admin """
-    if os.getenv("ADMIN_POND_ID"):
+    if os.getenv("POND_ID"):
         report_ch = os.getenv("REPORT_CH")
         get_ch = ctx.get_channel(report_ch)
         embed = discord.Embed(
@@ -34,3 +34,5 @@ async def report_to_logCh(ctx: discord.Client, cmd_used:str, author: str, conten
         await get_ch.send(embed=embed)
     else:
         return None
+    
+

@@ -7,10 +7,16 @@ class test_func(commands.Cog):
         self.client = client
 
     @commands.command()
-    async def test_pull(self, ctx:commands.Context):
-        l = quarantine
-        pull_passkey = await l.fetch_passkey(client=self.client)
-        await ctx.send(f"passkey is: {pull_passkey}")
+    async def check_role(self, ctx:commands.Context):
+        role = discord.utils.get(
+            ctx.author.roles,
+            name="Eskimo's"
+        )
+        if role:
+            await ctx.reply(f" role is true: {role.name}")
+        else:
+            await ctx.reply(f"None")
+        
 
 async def setup(client):
     await client.add_cog(test_func(client))
