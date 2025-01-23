@@ -1,32 +1,36 @@
-from src.api.twitch_api import TwitchAPI
+from src.api import twitch_api
+from dotenv import load_dotenv
+import os
+import json
 
-CLIENT_ID = ""
-CLIENT_SECRET = ""
+# โหลด environment variables
+load_dotenv()
+CLIENT_ID = os.getenv("CLIENT_ID_TW")
+CLIENT_SECRET = os.getenv("CLIENT_SECRET_TW")
 
-USERNAME = ""
+# สร้างอินสแตนซ์ของ API
+api = twitch_api.TwitchAPI(CLIENT_ID, CLIENT_SECRET)
 
-def main():
-    twitch = TwitchAPI(CLIENT_ID, CLIENT_SECRET)
+# เรียกข้อมูลผู้ใช้
+username = "aceu"
+user_data = api.get_user(username)
+if user_data:
+    user_id = user_data[0]["id"]
+    print("User Data:", json.dumps(user_data, indent=4))
+
+    # ตรวจสอบสถานะ Live
     try:
-        user_data = twitch.get_user(USERNAME)
-        if not user_data:
-            print(f"User '{USERNAME}' not found.")
-            return
-        user_id = user_data[0]["id"]
-        print(f"User ID: {user_id}")
-        print(f"Display Name: {user_data[0]['display_name']}")
-
-        live_data = twitch.check_live_status(user_id)
-        if live_data:
-            print(f"{USERNAME} is currently live!")
-            print(f"Title: {live_data[0]['title']}")
-            print(f"Game: {live_data[0]['game_name']}")
-            print(f"Viewers: {live_data[0]['viewer_count']}")
-        else:
-            print(f"{USERNAME} is not live.")
-
+        live_status = api.check_live_status(user_id)
+        print("Live Status:", json.dumps(live_status, indent=4))
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Error checking live status: {e}")
 
-if __name__ == "__main__":
-    main()
+    # ดึงข้อมูลคลิป
+    try:
+        clips_data = api.get_clips(user_id)
+        print("Clips Data:", json.dumps(clips_data, indent=4))
+    except Exception as e:
+        print(f"Error fetching clips: {e}")
+
+else:
+    print("User not found!")
