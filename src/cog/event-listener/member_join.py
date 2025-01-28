@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from src.client.logic import report_log
+
 
 class event_member(commands.Cog):
     def __init__(self, client:commands.Bot):
@@ -9,7 +9,7 @@ class event_member(commands.Cog):
     @commands.Cog.listener()
     async def on_member_join(self, member:discord.Member):
         
-        role = discord.utils.get(member.guild.roles, name="blinded")
+        role = discord.utils.get(member.guild.roles, name="unregistered")
         
         await member.add_roles(role)
         

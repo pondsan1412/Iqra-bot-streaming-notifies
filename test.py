@@ -1,36 +1,26 @@
-from src.api import twitch_api
-from dotenv import load_dotenv
-import os
-import json
+# from src.api import twitch_api
+# import os
+# from dotenv import load_dotenv
 
-# โหลด environment variables
-load_dotenv()
-CLIENT_ID = os.getenv("CLIENT_ID_TW")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET_TW")
+# load_dotenv()
 
-# สร้างอินสแตนซ์ของ API
-api = twitch_api.TwitchAPI(CLIENT_ID, CLIENT_SECRET)
+# CLIENT_ID = os.getenv("TWITCH_ID")
+# CLIENT_SECRET = os.getenv("TWITCH_SECRET")
 
-# เรียกข้อมูลผู้ใช้
-username = "aceu"
-user_data = api.get_user(username)
-if user_data:
-    user_id = user_data[0]["id"]
-    print("User Data:", json.dumps(user_data, indent=4))
+# twitch = twitch_api.TwitchAPI(CLIENT_ID, CLIENT_SECRET)
 
-    # ตรวจสอบสถานะ Live
-    try:
-        live_status = api.check_live_status(user_id)
-        print("Live Status:", json.dumps(live_status, indent=4))
-    except Exception as e:
-        print(f"Error checking live status: {e}")
+# user = twitch.get_user("pond_thunder")
+# if user:
+#     global user_id
+#     user_id = user[0]['id']
+#     print(f"user id for {user}: {user_id}")
+# else:
+#     print("user not found")
 
-    # ดึงข้อมูลคลิป
-    try:
-        clips_data = api.get_clips(user_id)
-        print("Clips Data:", json.dumps(clips_data, indent=4))
-    except Exception as e:
-        print(f"Error fetching clips: {e}")
+# user_id = None
 
-else:
-    print("User not found!")
+
+# print(user)
+
+# live_status = twitch.check_live_status(user_id)a
+

@@ -1,21 +1,36 @@
-import os
 import discord
-from dotenv import load_dotenv
 
-async def fetch_passkey(client: discord.Client):
-    """Get passkey in passkey channel and save it in instants."""
-    load_dotenv()
-    passkey_channel_id = os.getenv("PASSKEY_CH")
-    if not passkey_channel_id:
-        raise ValueError("PASSKEY_CH environment variable not set.")
+async def handle_offline(message: discord.Message):
+    """
+    Handles messages from users with 'offline' status in Discord.
+
+    This function deletes the message sent by a user who has their
+    Discord status set to 'offline' and sends a warning message
+    to inform them about the restriction.
+
+    Args:
+        message (discord.Message): The message object received from Discord.
+
+    Usage:
+        Call this function inside an event listener for messages, such as:
+        @bot.event
+        async def on_message(message):
+            await handle_offline(message)
     
-    channel = client.get_channel(int(passkey_channel_id))
-    if not channel:
-        raise ValueError(f"Channel with ID {passkey_channel_id} not found.")
-    
-    # Fetch the last message in the channel
-    async for message in channel.history(limit=1):
-        return message.content
-    
-    raise ValueError("No messages found in the passkey channel.")
+    Notes:
+        - This function assumes that the message object contains a valid 
+          'author.status' property from Discord API.
+        - Requires proper permissions to delete messages in the channel.
+    """
+    try:
+        if message.author.status.value == "offline":
+            await message.delete()
+            await message.channel.send(
+                f"{message.author.mention}, your status is set to `{message.author.status}`. "
+                f"Please change it to something else to send messages."
+            )
+        else:
+            return
+    except Exception as e:
+        await message.channel.send(f"Error: {e}")
 

@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from src.client.logic import quarantine
+
 
 class test_func(commands.Cog):
     def __init__(self, client:commands.Bot):

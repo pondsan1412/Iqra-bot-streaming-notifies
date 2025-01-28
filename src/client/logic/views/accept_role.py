@@ -24,7 +24,7 @@ class view_request_accept(discord.ui.View):
             # เพิ่ม role ให้ผู้ใช้
             await member.add_roles(role)
             await interaction.response.send_message(f"Successfully added role 'Eskimo's' to {member.mention}.", ephemeral=True)
-
+            await member.remove_roles(discord.utils.get(self.guild.roles, name="unregistered"))
             # เรียก callback เพื่อส่งสถานะกลับ
             if self.callback:
                 self.callback(True)

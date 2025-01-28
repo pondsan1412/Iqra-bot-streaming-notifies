@@ -2,9 +2,8 @@ import discord
 from discord.ext import commands
 import discord.app_commands as app
 from src.client.logic import report_log
-from src.client.logic import quarantine
+import src.client.logic.protection as protection
 from src.client.logic import requests
-
 import asyncio
 
 class lockdown_user(commands.Cog):
@@ -24,7 +23,7 @@ class lockdown_user(commands.Cog):
                 passkey
             )
             #check if password is correct
-            p = await quarantine.fetch_passkey(self.client)
+            p = await protection.fetch_passkey(self.client)
             if passkey != p:
                 await ctx.followup.send("wrong password")
                 return
@@ -69,8 +68,5 @@ class lockdown_user(commands.Cog):
             await ctx.followup.send(content="Your request has been refused.")
 
 
-
-        
-
-async def setup(client):
+async def setup(client:commands.Bot):
     await client.add_cog(lockdown_user(client))
