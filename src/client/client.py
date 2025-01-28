@@ -26,7 +26,7 @@ class client(commands.Bot):
         """
         base_path = "src.cog"
         categories = ["commands", "event-listener"]
-
+        
         # Dynamically load all Cogs
         for category in categories:
             path = os.path.join(base_path.replace(".", "/"), category)
