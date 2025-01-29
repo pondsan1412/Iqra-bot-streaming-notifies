@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from src.api.iicemkdatabase import check_unquarantine_users, remove_from_quarantine, get_quarantine_remaining_time, save_quarantine, store_quarantine_message
 from src.api.quarantine_manager import update_quarantine_embeds
+import asyncio
 
 load_dotenv()
 
@@ -103,3 +104,54 @@ async def check_existing_members():
         await monitorDangerousPerson(clientdc, member)  # Check each member
 
     print("✅ Finished checking existing members.")
+
+
+async def auto_remove_role(user: clientdc.Member):
+    """
+    Check if the user responds to the DM within 30 seconds.
+    If the user does not reply, remove the "Eskimo's" role due to inactivity.
+    """
+    role = clientdc.utils.get(user.guild.roles, name="Eskimo's")
+    
+    if role not in user.roles:
+        return
+
+    try:
+        dm_channel = await user.create_dm()
+        await dm_channel.send("Please reply within 30 seconds to keep your Eskimo's role.")
+        
+        def check(message):
+            return message.author == user and isinstance(message.channel, clientdc.DMChannel)
+
+        # Wait for the user's response within 30 seconds
+        await clientdc.wait_for("message", check=check, timeout=30)
+        print(f"✅ {user.name} responded in time, role not removed.")
+
+    except asyncio.TimeoutError:
+        # Remove role if user didn't respond in time
+        await user.remove_roles(role)
+        await dm_channel.send("You have been removed from the Eskimo's role due to inactivity.")
+        print(f"❌ {user.name} removed from Eskimo's role due to inactivity.")
+
+# @tasks.loop(minutes=5)  # Run every 5 minutes
+# async def check_inactive_users():
+#     """
+#     Loop through all members with the "Eskimo's" role and check if they respond within 30 seconds.
+#     If they do not respond, remove their role.
+#     """
+#     guild = clientdc.get_guild(YOUR_GUILD_ID)  # Replace with your server's ID
+#     if guild is None:
+#         return
+    
+#     role = discord.utils.get(guild.roles, name="Eskimo's")
+#     if role is None:
+#         return
+    
+#     for user in role.members:
+#         await auto_remove_role(user)  # Call the auto_remove_role function for each user
+
+# @clientdc.event
+# async def on_ready():
+#     print(f"Logged in as {clientdc.user}")
+#     check_inactive_users.start()  # Start the auto-remove role task
+
