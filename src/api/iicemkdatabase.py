@@ -4,6 +4,8 @@ import os
 from dotenv import load_dotenv
 import logging
 import pymysql.cursors
+from datetime import datetime, timedelta, timezone
+
 # โหลดค่าจาก .env
 load_dotenv()
 
@@ -177,6 +179,140 @@ def check_email_exists(email: str) -> bool:
     except pymysql.MySQLError as e:
         logging.error(f"❌ Database error: {e}")
         return False
+    finally:
+        cursor.close()
+        db.close()
+
+def create_quarantine_table():
+    """ create table quarantine_people_time if not exists"""
+    db = connect_db()
+    cursor = db.cursor()
+
+    sql_quarantine = """
+    CREATE TABLE IF NOT EXIST quarantine_people_time (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    username VARCHAR(255) NOT NULL,
+    quarantine_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT NOT NULL
+    );
+    """
+    cursor.execute(sql_quarantine)
+    db.commit()
+    db.close()
+
+def save_quarantine(user_id: int, username: str, reason: str):
+    """Save user quarantine data in the database."""
+    db = connect_db()
+    cursor = db.cursor()
+
+    try:
+        sql = """
+        INSERT INTO quarantine_people_time (user_id, username, reason, quarantine_time)
+        VALUES (%s, %s, %s, NOW())
+        ON DUPLICATE KEY UPDATE quarantine_time = NOW()
+        """
+        cursor.execute(sql, (user_id, username, reason))
+        db.commit()
+    except pymysql.MySQLError as e:
+        logging.error(f"❌ Database error: {e}")
+    finally:
+        cursor.close()
+        db.close()
+
+
+def check_unquarantine_users():
+    """check who should be unquarantined"""
+    try:
+        db = connect_db()
+        cursor = db.cursor()
+
+        sql = "SELECT user_id, username FROM quarantine_people_time WHERE quarantine_time < DATE_SUB(NOW(), INTERVAL 14 DAY)"
+        cursor.execute(sql)
+        result = cursor.fetchall()
+        db.close()
+
+        return result
+    except pymysql.MySQLError as e:
+        logging.error(f"❌ Database error: {e}")
+        return False
+    
+def remove_from_quarantine(user_id: int):
+    """remove the user from the quarantine table"""
+    try:
+        db = connect_db()
+        cursor = db.cursor()
+
+        sql = "DELETE FROM quarantine_people_time WHERE user_id = %s"
+        cursor.execute(sql, (user_id,))
+        db.commit()
+        db.close()
+    except pymysql.MySQLError as e:
+        logging.error(f"❌ Database error: {e}")
+        return False
+    
+
+def get_quarantine_remaining_time(user_id: int):
+    """Get the remaining time before a user is unquarantined."""
+    db = connect_db()
+    cursor = db.cursor()
+
+    try:
+        sql = "SELECT quarantine_time FROM quarantine_people_time WHERE user_id = %s"
+        cursor.execute(sql, (user_id,))
+        result = cursor.fetchone()
+
+        if not result or not result["quarantine_time"]:
+            return "User is not in quarantine."
+
+        quarantine_time = result["quarantine_time"].replace(tzinfo=timezone.utc)
+        end_time = quarantine_time + timedelta(days=14)
+        now = datetime.now(timezone.utc)
+        remaining_time = end_time - now
+
+        if remaining_time.total_seconds() <= 0:
+            return "User is eligible for unquarantine."
+
+        return f"Time left: {remaining_time.days}d {remaining_time.seconds // 3600}h {(remaining_time.seconds // 60) % 60}m"
+    
+    except pymysql.MySQLError as e:
+        logging.error(f"❌ Database error: {e}")
+        return "Database error."
+    finally:
+        cursor.close()
+        db.close()
+
+def store_quarantine_message(user_id: int, message_id: int, channel_id: int):
+    """ Store the message ID of the quarantine embed for auto-updates. """
+    db = connect_db()
+    cursor = db.cursor()
+
+    try:
+        sql = """
+        UPDATE quarantine_people_time 
+        SET message_id = %s, channel_id = %s
+        WHERE user_id = %s
+        """
+        cursor.execute(sql, (message_id, channel_id, user_id))
+        db.commit()
+    except pymysql.MySQLError as e:
+        logging.error(f"❌ Database error: {e}")
+    finally:
+        cursor.close()
+        db.close()
+
+def get_quarantine_messages():
+    """Retrieve all active quarantine messages."""
+    db = connect_db()
+    cursor = db.cursor()
+
+    try:
+        sql = "SELECT user_id, message_id, channel_id FROM quarantine_people_time WHERE message_id IS NOT NULL"
+        cursor.execute(sql)
+        return cursor.fetchall()  # Returns a list of dicts
+    except pymysql.MySQLError as e:
+        logging.error(f"❌ Database error: {e}")
+        return []
     finally:
         cursor.close()
         db.close()
