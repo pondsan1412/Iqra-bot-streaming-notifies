@@ -24,6 +24,7 @@ def stats_mmr_and_ranked(user_id: int):
             ranked = data.get("overallRank")  # Extract Ranked
             name = data.get("name")
             rank = data.get("rank")
+            season = data.get("season")
             return mmr, ranked, name, rank
         except ValueError as e:
             raise ValueError("Failed to parse JSON response.") from e
@@ -63,7 +64,27 @@ async def async_stats_mmr_and_ranked(user_id: int):
                 mmr = data.get("mmr", "N/A")
                 name = data.get("name", "Unknown")
                 rank = data.get("rank", "N/A")
+                season = data.get("season", "N/A")
+                return mmr, name, rank, season
+
+
+async def previous_season_stats(user_id: int, season: int):
+    """
+    Fetch MMR and rank of a user from a previous season.
+    """
+    API = os.getenv("MK8DX_USER_INFO_DETAILS")
+    if not API:
+        raise ValueError("API endpoint is not defined. Check your .env file or environment variables.")
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"{API}{user_id}&season={season}") as response:
+            if response.status == 200:
+                data = await response.json()
+                mmr = data.get("mmr", "N/A")
+                name = data.get("name", "Unknown")
+                rank = data.get("rank", "N/A")
                 return {"id": user_id, "mmr": mmr, "name": name, "rank": rank}
             else:
                 return {"id": user_id, "mmr": "N/A", "name": "Unknown", "rank": "N/A"}
+        
 

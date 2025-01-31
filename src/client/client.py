@@ -25,7 +25,7 @@ class client(commands.Bot):
         and sync application commands (slash commands).
         """
         base_path = "src.cog"
-        categories = ["commands", "event-listener"]
+        categories = ["commands", "event-listener","autotask"]
         
         # Dynamically load all Cogs
         for category in categories:

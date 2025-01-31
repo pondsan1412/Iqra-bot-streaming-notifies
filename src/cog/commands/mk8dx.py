@@ -9,18 +9,18 @@ class mk8dx(commands.Cog):
         self.client = client
 
     @app_commands.command()
-    async def mmr(self, ctx:discord.Interaction, select_people: discord.Member):
+    async def mmr(self, ctx:discord.Interaction, select_people: discord.Member, season: int = None):
         """
         show specific player mmr
         """
         await ctx.response.defer(thinking=True)
         try:
             if select_people:
-                mmr, ranked,name = mk8dx_api.stats_mmr_and_ranked(user_id=select_people.id)
+                mmr, name, rank, seasons= mk8dx_api.previous_season_stats(select_people.id, season)
                 embed = discord.Embed(
                     title=f"{select_people.name}'s short info"
                 )
-                embed.add_field(name=f"{name}'s current season info", value=f"mmr: {mmr}\nranking: {ranked}")
+                embed.add_field(name=f"{name} season: {seasons}", value=f"mmr: {mmr}\nranking: {rank}")
                 embed.set_thumbnail(url=select_people.avatar.url if select_people.avatar else "https://oyster.ignimgs.com/mediawiki/apis.ign.com/mario-kart-for-wii-u/f/f0/Mk8iconroy.png?width=325")
                 await ctx.followup.send(embed=embed)
             else:
@@ -80,6 +80,7 @@ class mk8dx(commands.Cog):
                     color=discord.Color.red()
                 )
             )
+
 
 async def setup(client):
     await client.add_cog(mk8dx(client))
