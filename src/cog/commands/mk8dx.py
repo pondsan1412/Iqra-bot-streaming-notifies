@@ -3,6 +3,7 @@ from discord.ext import commands
 from discord import app_commands
 from src.api import mk8dx_api
 import asyncio
+from src.client import embed as rank_embed_api
 
 class mk8dx(commands.Cog):
     def __init__(self, client: commands.Bot):
@@ -13,22 +14,21 @@ class mk8dx(commands.Cog):
         """
         show specific player mmr
         """
-        await ctx.response.defer(thinking=True)
+        if not ctx.response.is_done():
+            await ctx.response.defer(thinking=True)
         try:
-            if select_people:
-                mmr, name, rank, seasons= mk8dx_api.previous_season_stats(select_people.id, season)
-                embed = discord.Embed(
-                    title=f"{select_people.name}'s short info"
-                )
-                embed.add_field(name=f"{name} season: {seasons}", value=f"mmr: {mmr}\nranking: {rank}")
-                embed.set_thumbnail(url=select_people.avatar.url if select_people.avatar else "https://oyster.ignimgs.com/mediawiki/apis.ign.com/mario-kart-for-wii-u/f/f0/Mk8iconroy.png?width=325")
-                await ctx.followup.send(embed=embed)
-            else:
-                await ctx.followup.send("error")
-        except discord.Forbidden as dc:
-            await ctx.followup.send(f"discord Forbidden: {dc}")
+            
+            mmr, name, rank, seasons= await mk8dx_api.previous_season_stats(select_people.id, season)
+            embed_rank = rank_embed_api.rankEmbed(rank)
+            embed = discord.Embed(
+                title=f"{select_people.name}'s short info",
+                color=embed_rank
+            )
+            embed.add_field(name=f"player {name} in season: {seasons}", value=f"mmr: {mmr}\nrank: {rank}")
+            embed.set_thumbnail(url=select_people.avatar.url if select_people.avatar else "https://oyster.ignimgs.com/mediawiki/apis.ign.com/mario-kart-for-wii-u/f/f0/Mk8iconroy.png?width=325")
+            await ctx.followup.send(embed=embed)
         except Exception as e:
-            await ctx.followup.send(f"error: {e}\n info not found\nthis user probably not playing mk8dx")
+            await ctx.followup.send(f"An error occurred: {e}")
 
 
 

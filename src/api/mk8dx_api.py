@@ -68,7 +68,12 @@ async def async_stats_mmr_and_ranked(user_id: int):
                 return mmr, name, rank, season
 
 
-async def previous_season_stats(user_id: int, season: int):
+
+class NoDataError(Exception):
+    """Custom exception for no data available."""
+    pass
+
+async def previous_season_stats(user_id: int, season: int=None):
     """
     Fetch MMR and rank of a user from a previous season.
     """
@@ -76,15 +81,23 @@ async def previous_season_stats(user_id: int, season: int):
     if not API:
         raise ValueError("API endpoint is not defined. Check your .env file or environment variables.")
     
-    async with aiohttp.ClientSession() as session:
-        async with session.get(f"{API}{user_id}&season={season}") as response:
-            if response.status == 200:
-                data = await response.json()
-                mmr = data.get("mmr", "N/A")
-                name = data.get("name", "Unknown")
-                rank = data.get("rank", "N/A")
-                return {"id": user_id, "mmr": mmr, "name": name, "rank": rank}
-            else:
-                return {"id": user_id, "mmr": "N/A", "name": "Unknown", "rank": "N/A"}
-        
-
+    try:
+        if season is None:
+            season = ""
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{API}{user_id}&season={season}") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if not data or "errors" in data and "season" in data["errors"]:
+                        raise NoDataError(f"Player {user_id} has not played in season {season} yet or the season is invalid.")
+                    mmr = data.get("mmr", "N/A")
+                    name = data.get("name", "Unknown")
+                    rank = data.get("rank", "N/A")
+                    season = data.get("season", "N/A")
+                    return mmr, name, rank, season
+                else:
+                    raise Exception(f"This user has not played in season {season} yet")
+    except aiohttp.ClientError as e:
+        raise Exception(f"{e}")
+    except Exception as e:
+        raise Exception(f"{e}")
